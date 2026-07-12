@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Identity Provider App</title>
+    <style>
+        body { font-family: monospace; background: #0f0f1a; color: #00ffcc; padding: 40px; max-width: 500px; margin: auto; }
+        input, button { width: 100%; box-sizing: border-box; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #444; color: #fff; font-size: 1rem; }
+        button { background: #4ecca3; color: #1a1a2e; font-weight: bold; cursor: pointer; border: none; }
+        button:hover { background: #45b391; }
+        .control-panel { display: none; background: #161625; border: 1px solid #2b2b40; padding: 20px; margin-top: 20px; border-radius: 4px; }
+        a { color: #ff007f; display: block; margin: 10px 0; text-decoration: none; font-weight: bold; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <h2>🛰️ Provision Sovereign WebID & Solid Pod</h2>
+    <p>Submit your preferred unique handle identifier below:</p>
+    
+    <div id="regForm">
+        <input type="text" id="usernameInput" placeholder="e.g., intern_01" required>
+        <button onclick="registerSovereignPod()">Initialize Pod Allocation</button>
+    </div>
+
+    <!-- Revealed dynamically only after parsing raw server JSON response -->
+    <div id="successPanel" class="control-panel">
+        <h3 style="color:#fff; margin-top:0;">🎉 Pod Allocated Successfully!</h3>
+        <p>Your unique key identity token is: <strong id="outId" style="color:#e94560;">...</strong></p>
+        <p>Pass this string configuration key into your local Python variable block.</p>
+        <hr style="border-color:#2b2b40;">
+        
+        <a id="lnkAcl" href="#" target="_blank">⚙️ [Configure Access Lists (ACL Manager App)]</a>
+        <a id="lnkVault" href="#" target="_blank">🏆 [Inspect Sovereign Achievement Vault App]</a>
+        <br>
+        <a href="/index.html" style="color:#666;">← Back to Main Documentation Hub</a>
+    </div>
+
+    <script>
+        function registerSovereignPod() {
+            const userString = document.getElementById('usernameInput').value.trim();
+            if(!userString) return alert("Please specify a profile handle.");
+
+            fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: userString })
+            })
+            .then(res => res.json())
+            .then(payload => {
+                if (payload.success) {
+                    document.getElementById('regForm').style.display = 'none';
+                    document.getElementById('outId').innerText = payload.internId;
+                    document.getElementById('lnkAcl').href = `/acl.html?id=${payload.internId}`;
+                    document.getElementById('lnkVault').href = `/view-achievements.html?id=${payload.internId}`;
+                    document.getElementById('successPanel').style.display = 'block';
+                }
+            })
+            .catch(() => alert("Connection failure provisioning workspace allocation instance."));
+        }
+    </script>
+</body>
+</html>

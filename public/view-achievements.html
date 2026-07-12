@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sovereign Achievements Repository</title>
+    <style>
+        body { font-family: monospace; background: #0f0f1a; color: #00ffcc; padding: 40px; max-width: 500px; margin: auto; }
+        a { color: #ff007f; text-decoration: none; display: inline-block; margin-top: 20px; margin-right: 15px; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <h2>🏆 Your Personal Achievements Vault</h2>
+    <p>Querying Data Pod Target: <strong id="targetUser" style="color:#4ecca3;">...</strong></p>
+    <hr style="border-color:#2b2b40;">
+    
+    <div id="contentBox" style="margin-top:20px; font-size:1.1rem; line-height:1.6em;">Loading personal storage array indices...</div>
+    
+    <a id="lnkManageAcl" href="#">⚙️ [Manage Pod ACL Rules]</a>
+    <a href="/index.html">🏠 [Register New Pod]</a>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const internId = urlParams.get('id') || 'intern_01';
+        document.getElementById('targetUser').innerText = internId;
+        document.getElementById('lnkManageAcl').href = `/acl.html?id=${internId}`;
+
+        fetch(`/pods/${internId}/achievements`)
+            .then(res => {
+                if (res.status === 403) throw new Error("⚠️ Sovereign Access Blocked: Your local ACL settings are currently denying read access to the central server.");
+                return res.json();
+            })
+            .then(data => {
+                const box = document.getElementById('contentBox');
+                box.innerHTML = `<p><strong>Verified Pod High Score Record:</strong> ${data.highscore} Points</p><h4>Unlocked Badge Items (JSON-LD Linked Data Array):</h4>`;
+                
+                if(data.items.length === 0) { 
+                    box.innerHTML += "<p style='color:#666;'>No badges unlocked. End a Pygame session with a score of 5+ to earn trophies.</p>"; 
+                    return;
+                }
+                
+                data.items.forEach(badge => {
+                    box.innerHTML += `<div style="border:1px dashed #4ecca3; padding:15px; margin:10px 0; background:#161625;">🏅 ${badge} Unlocked</div>`;
+                });
+            })
+            .catch(err => {
+                document.getElementById('contentBox').innerHTML = `<p style="color:#e94560; font-weight:bold;">${err.message}</p>`;
+            });
+    </script>
+</body>
+</html>

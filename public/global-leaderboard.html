@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Federated Live Activity Dashboard</title>
+    <style>
+        body { font-family: monospace; background: #050505; color: #00ff00; padding: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+        h2 { border-bottom: 1px solid #00ff00; padding-bottom: 10px; margin-top: 0; color: #fff; }
+        .column { background: #0a0a0a; border: 1px solid #333; padding: 20px; border-radius: 4px; min-height: 500px; }
+        ol { padding-left: 20px; font-size: 1.2rem; }
+        li { margin-bottom: 10px; color: #ff007f; }
+        li span { color: #00ff00; }
+        .feed-item { border-bottom: 1px dashed #222; padding: 12px 0; font-size: 1rem; line-height: 1.4em; }
+    </style>
+</head>
+<body>
+
+    <!-- Left Column: Filtered ActivityPub Broadcast Streams -->
+    <div class="column">
+        <h2>🛰️ ActivityPub Ticker Pipeline Feed</h2>
+        <div id="liveFeed">Awaiting cross-pod broadcasts...</div>
+    </div>
+
+    <!-- Right Column: Filtered High Scores Aggregation Matrix -->
+    <div class="column">
+        <h2>🏆 Federated Server High Scores</h2>
+        <ol id="leaderboardList">Loading verified standings...</ol>
+    </div>
+
+    <script>
+        function refreshFederatedState() {
+            // 1. Fetch filtered ActivityPub messages array
+            fetch('/api/global-feed')
+                .then(res => res.json())
+                .then(data => {
+                    const el = document.getElementById('liveFeed');
+                    if(data.length === 0) { el.innerText = "No network activities broadcasted yet."; return; }
+                    el.innerHTML = data.map(act => `<div class="feed-item">[📡 AP MATCH FEED] ${act.summary}</div>`).join('');
+                });
+
+            // 2. Fetch filtered Top 10 Leaderboard Standings
+            fetch('/api/global-leaderboard')
+                .then(res => res.json())
+                .then(data => {
+                    const el = document.getElementById('leaderboardList');
+                    if(data.length === 0) { el.innerHTML = "<p style='color:#666;'>No scores logged yet.</p>"; return; }
+                    el.innerHTML = data.map(player => `<li><span>${player.username}</span> - ${player.score} pts <small style="color:#444;">(${player.timestamp})</small></li>`).join('');
+                });
+        }
+        
+        // Polling interval updates screens every 1.5 seconds automatically
+        setInterval(refreshFederatedState, 1500);
+        refreshFederatedState();
+    </script>
+</body>
+</html>

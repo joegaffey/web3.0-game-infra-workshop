@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sovereign Infrastructure Hub</title>
+    <style>
+        body { font-family: monospace; background: #0f0f1a; color: #00ffcc; padding: 40px; max-width: 800px; margin: auto; line-height: 1.5; }
+        h1, h2, h3 { color: #fff; border-bottom: 1px solid #2b2b40; padding-bottom: 8px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
+        .card { background: #161625; border: 1px solid #2b2b40; padding: 20px; border-radius: 4px; display: flex; flex-direction: column; justify-content: space-between; }
+        .btn { display: block; text-align: center; background: #4ecca3; color: #1a1a2e; font-weight: bold; padding: 12px; margin-top: 15px; text-decoration: none; border-radius: 4px; font-size: 1rem; }
+        .btn:hover { background: #45b391; }
+        pre { background: #000; padding: 15px; border-radius: 4px; color: #00ff00; overflow-x: auto; font-size: 0.85rem; border: 1px solid #222; }
+    </style>
+</head>
+<body>
+
+    <h1>🛰️ Web 3.0 Infra Workshop Portal</h1>
+    <p>Welcome to the central gateway coordinating multi-tenant Solid Pod storage infrastructure and ActivityPub network federation pipelines.</p>
+
+    <div class="grid">
+        
+        <div class="card">
+            <div>
+                <h2>🔐 1. Identity Provider</h2>
+                <p>Initialize your decentralized profile (WebID) and allocate your personal cloud data space container partition.</p>
+            </div>
+            <a href="/register.html" class="btn">Launch Identity Setup App →</a>
+        </div>
+
+        <!-- Card 2: Presentation App Link -->
+        <div class="card">
+            <div>
+                <h2>📺 2. Federated Network</h2>
+                <p>Access the open environment dashboard to monitor live room scoring changes and ActivityPub ticker events.</p>
+            </div>
+            <a href="/global-leaderboard.html" class="btn" style="background:#ff007f; color:#fff;">Open Global Ticker View →</a>
+        </div>
+    </div>
+
+    <!-- Section 3: In-Place Documentation Blueprint -->
+    <h2>💻 3. Python Integration Payload Blueprint</h2>
+    <p>When upgrading your local Pygame loop, use this code block to dispatch batch summaries exactly on game boundary conditions (On Death or On Pause):</p>
+    
+    <pre id="codeBlock">// Generating code context payload...</pre>
+
+    <script>
+        // Auto-inject the exact running domain address dynamically so interns can copy-paste instantly
+        const currentDomain = window.location.origin;
+        document.getElementById('codeBlock').textContent = `import requests
+
+def sync_session_to_cloud(asteroids_destroyed):
+    # Dynamic target matching your active deployment container instance url
+    url = "${currentDomain}/api/game-event"
+    
+    headers = {
+        "X-Intern-ID": "YOUR_PROVISIONED_HANDLE_ID",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "count": int(asteroids_destroyed)
+    }
+    
+    try:
+        response = requests.post(url, json=payload, headers=headers, timeout=2.0)
+        if response.status_code == 200:
+            print("💾 Synchronized successfully to Sovereign Pod.")
+        elif response.status_code == 403:
+            print("⚠️ Update calculation rejected by your custom Pod ACL permissions.")
+    except requests.RequestException:
+        print("🔌 Network timeout. Defaulting to isolated edge execution cache.")`;
+    </script>
+</body>
+</html>

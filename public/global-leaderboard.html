@@ -2,55 +2,281 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Federated Live Activity Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Leaderboard</title>
     <style>
-        body { font-family: monospace; background: #050505; color: #00ff00; padding: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
-        h2 { border-bottom: 1px solid #00ff00; padding-bottom: 10px; margin-top: 0; color: #fff; }
-        .column { background: #0a0a0a; border: 1px solid #333; padding: 20px; border-radius: 4px; min-height: 500px; }
-        ol { padding-left: 20px; font-size: 1.2rem; }
-        li { margin-bottom: 10px; color: #ff007f; }
-        li span { color: #00ff00; }
-        .feed-item { border-bottom: 1px dashed #222; padding: 12px 0; font-size: 1rem; line-height: 1.4em; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 50%, #0a1628 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 30px;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        }
+
+        .panel--leaderboard { --accent: #f59e0b; }
+        .panel--feed { --accent: #8b5cf6; }
+
+        .panel__title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel--leaderboard .panel__title { color: #f59e0b; }
+        .panel--feed .panel__title { color: #8b5cf6; }
+
+        /* Leaderboard styles */
+        .leaderboard { list-style: none; }
+
+        .leaderboard__entry {
+            display: flex;
+            align-items: center;
+            padding: 14px 16px;
+            margin-bottom: 8px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        .leaderboard__entry:hover {
+            transform: translateX(4px);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .leaderboard__entry--gold {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.05));
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .leaderboard__entry--silver {
+            background: linear-gradient(135deg, rgba(192, 192, 192, 0.1), rgba(192, 192, 192, 0.03));
+            border-color: rgba(192, 192, 192, 0.2);
+        }
+
+        .leaderboard__entry--bronze {
+            background: linear-gradient(135deg, rgba(205, 127, 50, 0.1), rgba(205, 127, 50, 0.03));
+            border-color: rgba(205, 127, 50, 0.2);
+        }
+
+        .leaderboard__rank {
+            font-size: 1.5rem;
+            width: 44px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .leaderboard__name {
+            flex: 1;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .leaderboard__score {
+            font-size: 1.1rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            color: #f59e0b;
+        }
+
+        .leaderboard__time {
+            font-size: 0.75rem;
+            color: #666;
+            margin-left: 12px;
+            min-width: 70px;
+            text-align: right;
+        }
+
+        /* Feed styles */
+        .feed { list-style: none; }
+
+        .feed__item {
+            padding: 14px 16px;
+            margin-bottom: 8px;
+            border-radius: 10px;
+            background: rgba(139, 92, 246, 0.05);
+            border: 1px solid rgba(139, 92, 246, 0.1);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .feed__item__header {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #8b5cf6;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .feed__item__text {
+            font-size: 0.95rem;
+            line-height: 1.4;
+            color: #d0d0d0;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #555;
+            font-style: italic;
+            font-size: 1rem;
+        }
+
+        .empty-state__icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive */
+        @media (max-width: 800px) {
+            .container {
+                grid-template-columns: 1fr;
+                padding: 20px 16px;
+            }
+        }
     </style>
 </head>
 <body>
+    <div class="container">
+        <!-- Leaderboard -->
+        <div class="panel panel--leaderboard">
+            <h1 class="panel__title">🏆 High Scores</h1>
+            <ol class="leaderboard" id="leaderboard">
+                <li class="empty-state">
+                    <div class="empty-state__icon">🎮</div>
+                    Waiting for players...
+                </li>
+            </ol>
+        </div>
 
-    <!-- Left Column: Filtered ActivityPub Broadcast Streams -->
-    <div class="column">
-        <h2>🛰️ ActivityPub Ticker Pipeline Feed</h2>
-        <div id="liveFeed">Awaiting cross-pod broadcasts...</div>
-    </div>
-
-    <!-- Right Column: Filtered High Scores Aggregation Matrix -->
-    <div class="column">
-        <h2>🏆 Federated Server High Scores</h2>
-        <ol id="leaderboardList">Loading verified standings...</ol>
+        <!-- Activity Feed -->
+        <div class="panel panel--feed">
+            <h1 class="panel__title">📡 Live Feed</h1>
+            <ul class="feed" id="feed">
+                <li class="empty-state">
+                    <div class="empty-state__icon">🛰️</div>
+                    No activity yet...
+                </li>
+            </ul>
+        </div>
     </div>
 
     <script>
-        function refreshFederatedState() {
-            // 1. Fetch filtered ActivityPub messages array
-            fetch('/api/global-feed')
-                .then(res => res.json())
-                .then(data => {
-                    const el = document.getElementById('liveFeed');
-                    if(data.length === 0) { el.innerText = "No network activities broadcasted yet."; return; }
-                    el.innerHTML = data.map(act => `<div class="feed-item">[📡 AP MATCH FEED] ${act.summary}</div>`).join('');
-                });
+        const rankMedals = ['🥇', '🥈', '🥉'];
 
-            // 2. Fetch filtered Top 10 Leaderboard Standings
+        function renderLeaderboard(data) {
+            const el = document.getElementById('leaderboard');
+            if (!data || data.length === 0) {
+                el.innerHTML = '<li class="empty-state"><div class="empty-state__icon">🎮</div>Waiting for players...</li>';
+                return;
+            }
+
+            el.innerHTML = data.map((player, i) => {
+                const tierClass = i === 0 ? 'leaderboard__entry--gold' :
+                                  i === 1 ? 'leaderboard__entry--silver' :
+                                  i === 2 ? 'leaderboard__entry--bronze' : '';
+                const medal = rankMedals[i] || `<span style="color:#666;">${i + 1}</span>`;
+
+                return `<li class="leaderboard__entry ${tierClass}">
+                    <span class="leaderboard__rank">${medal}</span>
+                    <span class="leaderboard__name">${escapeHtml(player.username)}</span>
+                    <span class="leaderboard__score">${player.score.toLocaleString()} pts</span>
+                    <span class="leaderboard__time">${player.timestamp}</span>
+                </li>`;
+            }).join('');
+        }
+
+        function renderFeed(data) {
+            const el = document.getElementById('feed');
+            if (!data || data.length === 0) {
+                el.innerHTML = '<li class="empty-state"><div class="empty-state__icon">🛰️</div>No activity yet...</li>';
+                return;
+            }
+
+            el.innerHTML = data.map(act => {
+                return `<li class="feed__item">
+                    <div class="feed__item__header">Achievement Unlocked</div>
+                    <div class="feed__item__text">${escapeHtml(act.summary)}</div>
+                </li>`;
+            }).join('');
+        }
+
+        let lastLeaderboardJSON = '';
+        let lastFeedJSON = '';
+
+        function refresh() {
             fetch('/api/global-leaderboard')
                 .then(res => res.json())
                 .then(data => {
-                    const el = document.getElementById('leaderboardList');
-                    if(data.length === 0) { el.innerHTML = "<p style='color:#666;'>No scores logged yet.</p>"; return; }
-                    el.innerHTML = data.map(player => `<li><span>${player.username}</span> - ${player.score} pts <small style="color:#444;">(${player.timestamp})</small></li>`).join('');
-                });
+                    const json = JSON.stringify(data);
+                    if (json !== lastLeaderboardJSON) {
+                        lastLeaderboardJSON = json;
+                        renderLeaderboard(data);
+                    }
+                })
+                .catch(() => {});
+
+            fetch('/api/global-feed')
+                .then(res => res.json())
+                .then(data => {
+                    const json = JSON.stringify(data);
+                    if (json !== lastFeedJSON) {
+                        lastFeedJSON = json;
+                        renderFeed(data);
+                    }
+                })
+                .catch(() => {});
         }
-        
-        // Polling interval updates screens every 1.5 seconds automatically
-        setInterval(refreshFederatedState, 1500);
-        refreshFederatedState();
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        setInterval(refresh, 2000);
+        refresh();
     </script>
 </body>
 </html>

@@ -265,29 +265,35 @@
         document.getElementById('username').textContent = internId;
         document.getElementById('lnkAcl').href = `/acl.html?id=${internId}`;
 
-        fetch(`/pods/${internId}/achievements`)
+        fetch(`/users/${internId}/outbox`)
             .then(res => {
-                if (res.status === 403) throw new Error('Access blocked by your ACL settings. Enable read access to view your data.');
+                if (res.status === 403) throw new Error('This user has opted out of public feeds. Enable permissions to view.');
+                if (res.status === 404) throw new Error('User not found. Register first.');
                 return res.json();
             })
             .then(data => {
-                // Show score
-                document.getElementById('highscore').textContent = data.highscore.toLocaleString();
-                document.getElementById('scoreDisplay').style.display = 'flex';
+                const items = data.orderedItems || [];
 
-                // Show badges
+                // Find score from Update activity
+                const scoreActivity = items.find(item => item.type === 'Update');
+                if (scoreActivity) {
+                    document.getElementById('highscore').textContent = scoreActivity.object.score.toLocaleString();
+                    document.getElementById('scoreDisplay').style.display = 'flex';
+                }
+
+                // Find badge announcements
+                const badges = items.filter(item => item.type === 'Announce');
                 const el = document.getElementById('badges');
-                if (!data.items || data.items.length === 0) {
+                if (badges.length === 0) {
                     el.innerHTML = '<li class="empty-state"><div class="empty-state__icon">🎯</div>No badges yet. Score 5+ to earn your first!</li>';
                     return;
                 }
 
-                el.innerHTML = data.items.map(badge => `
+                el.innerHTML = badges.map(act => `
                     <li class="badge">
-                        <span class="badge__icon">${badge.name.split(' ')[0]}</span>
+                        <span class="badge__icon">🏅</span>
                         <div class="badge__info">
-                            <div class="badge__name">${escapeHtml(badge.name.slice(badge.name.indexOf(' ') + 1))}</div>
-                            <div class="badge__desc">${escapeHtml(badge.desc)}</div>
+                            <div class="badge__name">${escapeHtml(act.summary)}</div>
                         </div>
                     </li>
                 `).join('');

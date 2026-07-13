@@ -38,8 +38,17 @@
         </div>
     </div>
 
-    <!-- Section 3: In-Place Documentation Blueprint -->
-    <h2>💻 3. Python Integration Payload Blueprint</h2>
+    <!-- Section 3: Raw ActivityPub Feeds -->
+    <h2>📡 3. Raw ActivityPub Data</h2>
+    <p>These endpoints return standardised ActivityPub <code>OrderedCollection</code> JSON-LD — the same data the leaderboard page visualises:</p>
+    <ul style="list-style:none; padding:0; margin: 15px 0;">
+        <li style="margin:8px 0;"><a href="/outbox?filter=badges" target="_blank" style="color:#ff007f;">/outbox?filter=badges</a> — Badge announcements</li>
+        <li style="margin:8px 0;"><a href="/outbox?filter=scores" target="_blank" style="color:#ff007f;">/outbox?filter=scores</a> — Leaderboard scores</li>
+        <li style="margin:8px 0;"><a href="/outbox" target="_blank" style="color:#ff007f;">/outbox</a> — All activity (default)</li>
+    </ul>
+
+    <!-- Section 4: In-Place Documentation Blueprint -->
+    <h2>💻 4. Python Integration Payload Blueprint</h2>
     <p>When upgrading your local Pygame loop, use this code block to dispatch batch summaries exactly on game boundary conditions (On Death or On Pause):</p>
     
     <pre id="codeBlock">// Generating code context payload...</pre>

@@ -67,32 +67,6 @@ app.post('/api/register', (req, res) => {
 // 🔒 2. SOVEREIGN SOLID POD ENDPOINTS
 // ==========================================
 
-// GET: Read data from an individual's private achievements vault (Enforces Sovereign ACL)
-app.get("/pods/:username/achievements", (req, res) => {
-    const { username } = req.params;
-
-    // Enforce Sovereign Governance Check: Has user locked their storage door?
-    if (ACL[username] && ACL[username].readAllowed === false) {
-        return res.status(403).json({ error: "Access Denied: Sovereign Data Guard blocked this request." });
-    }
-
-    const userData = PODS[username] || { highscore: 0, badges: [], stats: { games: 0, deaths: 0, enemies: 0, longestSession: 0 } };
-    
-    // Return badge details with names and descriptions
-    const badgeDetails = userData.badges.map(id => {
-        const def = BADGE_DEFINITIONS.find(b => b.id === id);
-        return def ? { id: def.id, name: def.name, desc: def.desc } : { id, name: id, desc: "" };
-    });
-
-    return res.status(200).json({
-        "@context": "https://w3.org",
-        "owner": username,
-        "highscore": userData.highscore,
-        "stats": userData.stats,
-        "items": badgeDetails
-    });
-});
-
 // GET: Fetch private explicit Access Control List matrix parameters for UI setup sync
 app.get("/api/pod/:username/acl", (req, res) => {
     const { username } = req.params;
@@ -251,26 +225,92 @@ app.post("/api/game-end", (req, res) => {
 });
 
 // =======================================================
-// 📡 5. ACTIVITYPUB PUBLIC OUTBOUND PIPELINE FEEDS
+// 📡 5. ACTIVITYPUB OUTBOX
 // =======================================================
 
-// GET: Publicly accessible compiled view of the filtered ActivityPub live ticker feed
-app.get("/api/global-feed", (req, res) => {
-    // Dynamic Privacy Filter: Discard stream items if actor changed their ACL checkmarks to false
+// GET: Personal outbox — returns a single user's ActivityPub activities
+app.get("/users/:username/outbox", (req, res) => {
+    const { username } = req.params;
+
+    if (!PODS[username]) {
+        return res.status(404).json({ error: "User not found." });
+    }
+
+    if (ACL[username] && ACL[username].globalOptIn === false) {
+        return res.status(403).json({ error: "This user has opted out of public feeds." });
+    }
+
+    // Collect badge announcements for this user
+    const userFeed = GLOBAL_FEED.filter(act => act.actor === username);
+
+    // Add score activity
+    const leaderboardEntry = LEADERBOARD.find(e => e.username === username);
+    const items = [...userFeed];
+    if (leaderboardEntry) {
+        items.push({
+            "@context": "https://www.w3.org/ns/activitystreams",
+            "type": "Update",
+            "actor": username,
+            "object": {
+                "type": "GameScore",
+                "score": leaderboardEntry.score,
+                "published": leaderboardEntry.timestamp
+            }
+        });
+    }
+
+    return res.status(200).json({
+        "@context": "https://www.w3.org/ns/activitystreams",
+        "type": "OrderedCollection",
+        "id": `/users/${username}/outbox`,
+        "attributedTo": username,
+        "totalItems": items.length,
+        "orderedItems": items
+    });
+});
+
+// GET: Federated outbox — returns an ActivityPub OrderedCollection
+// Filter with ?filter=badges (announcements) or ?filter=scores (leaderboard)
+app.get("/outbox", (req, res) => {
+    const filter = req.query.filter;
+
+    if (filter === "scores") {
+        // Leaderboard as ActivityPub OrderedCollection
+        const filteredLeaderboard = LEADERBOARD.filter(entry => {
+            return ACL[entry.username] ? ACL[entry.username].globalOptIn !== false : true;
+        });
+
+        const items = filteredLeaderboard.map(entry => ({
+            "@context": "https://www.w3.org/ns/activitystreams",
+            "type": "Update",
+            "actor": entry.username,
+            "object": {
+                "type": "GameScore",
+                "score": entry.score,
+                "published": entry.timestamp
+            }
+        }));
+
+        return res.status(200).json({
+            "@context": "https://www.w3.org/ns/activitystreams",
+            "type": "OrderedCollection",
+            "totalItems": items.length,
+            "orderedItems": items
+        });
+    }
+
+    // Default: badge announcements
     const filteredFeed = GLOBAL_FEED.filter(act => {
         const id = act.actor;
         return ACL[id] ? ACL[id].globalOptIn !== false : true;
     });
-    return res.status(200).json(filteredFeed);
-});
 
-// GET: Publicly accessible compiled view of the aggregated leaderboard standings
-app.get("/api/global-leaderboard", (req, res) => {
-    // Dynamic Filter: Enforce outbound opt-in privacy rules tracking logic before room presentation
-    const filteredLeaderboard = LEADERBOARD.filter(entry => {
-        return ACL[entry.username] ? ACL[entry.username].globalOptIn !== false : true;
+    return res.status(200).json({
+        "@context": "https://www.w3.org/ns/activitystreams",
+        "type": "OrderedCollection",
+        "totalItems": filteredFeed.length,
+        "orderedItems": filteredFeed
     });
-    return res.status(200).json(filteredLeaderboard);
 });
 
 // GET: Admin inspection utility to display raw database object conditions map to instructor terminal

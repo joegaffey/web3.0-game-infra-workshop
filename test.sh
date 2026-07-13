@@ -97,25 +97,26 @@ RESULT=$(curl -s -X POST "$BASE_URL/api/game-end" \
 echo "$RESULT" | python3 -m json.tool
 check "$RESULT" 'sessionLength' "Session length not returned from game-end"
 
-# 9. Check all achievements
-echo -e "\n=== ALL ACHIEVEMENTS ==="
-RESULT=$(curl -s "$BASE_URL/pods/$USER/achievements")
+# 9. Check all achievements via personal outbox
+echo -e "\n=== PERSONAL OUTBOX ==="
+RESULT=$(curl -s "$BASE_URL/users/$USER/outbox")
 echo "$RESULT" | python3 -m json.tool
-check "$RESULT" 'asteroid_hunter' "Missing asteroid_hunter badge"
-check "$RESULT" 'sharpshooter' "Missing sharpshooter badge"
-check "$RESULT" 'dedicated' "Missing dedicated badge"
-check "$RESULT" 'respawn_king' "Missing respawn_king badge"
-check "$RESULT" 'centurion' "Missing centurion badge"
+check "$RESULT" 'Asteroid Hunter' "Missing Asteroid Hunter badge"
+check "$RESULT" 'Sharpshooter' "Missing Sharpshooter badge"
+check "$RESULT" 'Dedicated' "Missing Dedicated badge"
+check "$RESULT" 'Respawn King' "Missing Respawn King badge"
+check "$RESULT" 'Centurion' "Missing Centurion badge"
+check "$RESULT" 'GameScore' "Missing score activity"
 
 # 10. Check leaderboard
 echo -e "\n=== LEADERBOARD ==="
-RESULT=$(curl -s "$BASE_URL/api/global-leaderboard")
+RESULT=$(curl -s "$BASE_URL/outbox?filter=scores")
 echo "$RESULT" | python3 -m json.tool
 check "$RESULT" "$USER" "User not on leaderboard"
 
 # 11. Check ActivityPub feed
 echo -e "\n=== GLOBAL FEED ==="
-RESULT=$(curl -s "$BASE_URL/api/global-feed")
+RESULT=$(curl -s "$BASE_URL/outbox?filter=badges")
 echo "$RESULT" | python3 -m json.tool
 check "$RESULT" 'Announce' "ActivityPub announce missing"
 
@@ -135,7 +136,7 @@ echo "HTTP $HTTP_CODE"
 [ "$HTTP_CODE" = "403" ] || fail "Expected 403, got $HTTP_CODE"
 
 echo -e "\n=== LEADERBOARD AFTER OPT-OUT ==="
-RESULT=$(curl -s "$BASE_URL/api/global-leaderboard")
+RESULT=$(curl -s "$BASE_URL/outbox?filter=scores")
 echo "$RESULT" | python3 -m json.tool
 echo "$RESULT" | grep -q "$USER" && fail "User should be filtered from leaderboard"
 

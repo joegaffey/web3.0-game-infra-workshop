@@ -141,6 +141,18 @@ if event.type == pygame.KEYDOWN:
 
 Once you earn a score of **5 or higher**, check the live leaderboard at `/global-leaderboard.html`. Your achievement is verified and broadcasted via **ActivityPub** to the community feed.
 
+### 📡 ActivityPub Feeds
+
+The server exposes a single federated **outbox** endpoint that returns standardised [ActivityPub](https://www.w3.org/TR/activitypub/) `OrderedCollection` objects. The leaderboard and activity feed pages are just visual presentations of this data:
+
+| URL | Filter | What it returns |
+|-----|--------|-----------------|
+| `/outbox?filter=badges` | Badge announcements | `Announce` activities for earned badges |
+| `/outbox?filter=scores` | Leaderboard | `Update` activities with player scores |
+| `/outbox` | All activity | Default: badge announcements |
+
+Try opening these URLs directly in your browser to see the raw JSON-LD. This is what a federated service would consume — no custom API documentation needed, because the data describes itself.
+
 ### 🛡️ The Data Governance Lab:
 1. Open your permissions page: `http://localhost:3000/acl.html?id=YOUR_GAMERTAG`
 2. **Uncheck** both options to block server visibility and opt out of the public leaderboard.

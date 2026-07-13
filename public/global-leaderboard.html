@@ -292,24 +292,31 @@
         let lastFeedJSON = '';
 
         function refresh() {
-            fetch('/api/global-leaderboard')
+            fetch('/outbox?filter=scores')
                 .then(res => res.json())
                 .then(data => {
-                    const json = JSON.stringify(data);
+                    const items = data.orderedItems || [];
+                    const leaderboard = items.map(item => ({
+                        username: item.actor,
+                        score: item.object.score,
+                        timestamp: item.object.published
+                    }));
+                    const json = JSON.stringify(leaderboard);
                     if (json !== lastLeaderboardJSON) {
                         lastLeaderboardJSON = json;
-                        renderLeaderboard(data);
+                        renderLeaderboard(leaderboard);
                     }
                 })
                 .catch(() => {});
 
-            fetch('/api/global-feed')
+            fetch('/outbox?filter=badges')
                 .then(res => res.json())
                 .then(data => {
-                    const json = JSON.stringify(data);
+                    const items = data.orderedItems || [];
+                    const json = JSON.stringify(items);
                     if (json !== lastFeedJSON) {
                         lastFeedJSON = json;
-                        renderFeed(data);
+                        renderFeed(items);
                     }
                 })
                 .catch(() => {});

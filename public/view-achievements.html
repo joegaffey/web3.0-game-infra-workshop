@@ -2,50 +2,267 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Sovereign Achievements Repository</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Achievements</title>
     <style>
-        body { font-family: monospace; background: #0f0f1a; color: #00ffcc; padding: 40px; max-width: 500px; margin: auto; }
-        a { color: #ff007f; text-decoration: none; display: inline-block; margin-top: 20px; margin-right: 15px; }
-        a:hover { text-decoration: underline; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 50%, #0a1628 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 550px;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        }
+
+        .panel--profile { --accent: #06b6d4; }
+        .panel--badges { --accent: #f59e0b; }
+
+        .panel__title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel--profile .panel__title { color: #06b6d4; }
+        .panel--badges .panel__title { color: #f59e0b; }
+
+        /* Profile / Score */
+        .profile__username {
+            font-size: 1.1rem;
+            color: #999;
+            margin-bottom: 20px;
+        }
+
+        .profile__username span {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .score-display {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            padding: 20px;
+            background: rgba(6, 182, 212, 0.08);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            border-radius: 12px;
+        }
+
+        .score-display__label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #06b6d4;
+            font-weight: 600;
+        }
+
+        .score-display__value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #fff;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .score-display__unit {
+            font-size: 1rem;
+            color: #666;
+        }
+
+        /* Badges */
+        .badges-list { list-style: none; }
+
+        .badge {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.03));
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .badge__icon {
+            font-size: 1.8rem;
+            flex-shrink: 0;
+        }
+
+        .badge__info { flex: 1; }
+
+        .badge__name {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .badge__desc {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 2px;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #555;
+            font-style: italic;
+        }
+
+        .empty-state__icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        /* Error state */
+        .error-state {
+            text-align: center;
+            padding: 30px 20px;
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        /* Navigation */
+        .nav {
+            display: flex;
+            gap: 12px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .nav__link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #aaa;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .nav__link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
     </style>
 </head>
 <body>
-    <h2>🏆 Your Personal Achievements Vault</h2>
-    <p>Querying Data Pod Target: <strong id="targetUser" style="color:#4ecca3;">...</strong></p>
-    <hr style="border-color:#2b2b40;">
-    
-    <div id="contentBox" style="margin-top:20px; font-size:1.1rem; line-height:1.6em;">Loading personal storage array indices...</div>
-    
-    <a id="lnkManageAcl" href="#">⚙️ [Manage Pod ACL Rules]</a>
-    <a href="/index.html">🏠 [Register New Pod]</a>
+    <div class="container">
+        <!-- Profile & Score -->
+        <div class="panel panel--profile">
+            <h1 class="panel__title">🛸 Player Profile</h1>
+            <p class="profile__username">Player: <span id="username">...</span></p>
+            <div class="score-display" id="scoreDisplay" style="display:none;">
+                <div>
+                    <div class="score-display__label">High Score</div>
+                    <div><span class="score-display__value" id="highscore">0</span> <span class="score-display__unit">pts</span></div>
+                </div>
+            </div>
+            <div id="profileError"></div>
+        </div>
+
+        <!-- Badges -->
+        <div class="panel panel--badges">
+            <h1 class="panel__title">🏅 Badges</h1>
+            <ul class="badges-list" id="badges">
+                <li class="empty-state">
+                    <div class="empty-state__icon">🎯</div>
+                    Loading...
+                </li>
+            </ul>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="nav">
+            <a class="nav__link" id="lnkAcl" href="#">⚙️ Permissions</a>
+            <a class="nav__link" href="/global-leaderboard.html">🏆 Leaderboard</a>
+            <a class="nav__link" href="/">🏠 Home</a>
+        </nav>
+    </div>
 
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const internId = urlParams.get('id') || 'intern_01';
-        document.getElementById('targetUser').innerText = internId;
-        document.getElementById('lnkManageAcl').href = `/acl.html?id=${internId}`;
+
+        document.getElementById('username').textContent = internId;
+        document.getElementById('lnkAcl').href = `/acl.html?id=${internId}`;
+
+        const badgeDescriptions = {
+            'Asteroid Hunter': 'Destroyed 5+ asteroids in a single session'
+        };
 
         fetch(`/pods/${internId}/achievements`)
             .then(res => {
-                if (res.status === 403) throw new Error("⚠️ Sovereign Access Blocked: Your local ACL settings are currently denying read access to the central server.");
+                if (res.status === 403) throw new Error('Access blocked by your ACL settings. Enable read access to view your data.');
                 return res.json();
             })
             .then(data => {
-                const box = document.getElementById('contentBox');
-                box.innerHTML = `<p><strong>Verified Pod High Score Record:</strong> ${data.highscore} Points</p><h4>Unlocked Badge Items (JSON-LD Linked Data Array):</h4>`;
-                
-                if(data.items.length === 0) { 
-                    box.innerHTML += "<p style='color:#666;'>No badges unlocked. End a Pygame session with a score of 5+ to earn trophies.</p>"; 
+                // Show score
+                document.getElementById('highscore').textContent = data.highscore.toLocaleString();
+                document.getElementById('scoreDisplay').style.display = 'flex';
+
+                // Show badges
+                const el = document.getElementById('badges');
+                if (!data.items || data.items.length === 0) {
+                    el.innerHTML = '<li class="empty-state"><div class="empty-state__icon">🎯</div>No badges yet. Score 5+ to earn your first!</li>';
                     return;
                 }
-                
-                data.items.forEach(badge => {
-                    box.innerHTML += `<div style="border:1px dashed #4ecca3; padding:15px; margin:10px 0; background:#161625;">🏅 ${badge} Unlocked</div>`;
-                });
+
+                el.innerHTML = data.items.map(badge => `
+                    <li class="badge">
+                        <span class="badge__icon">🏅</span>
+                        <div class="badge__info">
+                            <div class="badge__name">${escapeHtml(badge)}</div>
+                            <div class="badge__desc">${badgeDescriptions[badge] || 'Achievement unlocked'}</div>
+                        </div>
+                    </li>
+                `).join('');
             })
             .catch(err => {
-                document.getElementById('contentBox').innerHTML = `<p style="color:#e94560; font-weight:bold;">${err.message}</p>`;
+                document.getElementById('profileError').innerHTML = `<div class="error-state">⚠️ ${escapeHtml(err.message)}</div>`;
+                document.getElementById('badges').innerHTML = '';
             });
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
     </script>
 </body>
 </html>

@@ -272,7 +272,7 @@ app.get("/api/global-leaderboard", (req, res) => {
     const filteredLeaderboard = LEADERBOARD.filter(entry => {
         return ACL[entry.username] ? ACL[entry.username].globalOptIn !== false : true;
     });
-    return res.status(200).json(filteredLeaderboard.slice(0, 10));
+    return res.status(200).json(filteredLeaderboard);
 });
 
 // GET: Admin inspection utility to display raw database object conditions map to instructor terminal

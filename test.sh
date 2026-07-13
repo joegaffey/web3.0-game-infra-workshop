@@ -22,7 +22,7 @@ echo -e "\n=== GAME EVENT (3 enemies, died) ==="
 RESULT=$(curl -s -X POST "$BASE_URL/api/game-event" \
   -H "X-Intern-ID: $USER" \
   -H "Content-Type: application/json" \
-  -d '{"enemies_destroyed": 3, "died": true}')
+  -d '{"enemies_destroyed": 3, "deaths": 1}')
 echo "$RESULT" | python3 -m json.tool
 check "$RESULT" 'verifiedHighScore' "High score not returned"
 echo "$RESULT" | grep -q 'Asteroid Hunter' && fail "Should NOT earn badge at score 3"
@@ -32,7 +32,7 @@ echo -e "\n=== BADGE: Asteroid Hunter (7 enemies) ==="
 RESULT=$(curl -s -X POST "$BASE_URL/api/game-event" \
   -H "X-Intern-ID: $USER" \
   -H "Content-Type: application/json" \
-  -d '{"enemies_destroyed": 7, "died": true}')
+  -d '{"enemies_destroyed": 7, "deaths": 1}')
 echo "$RESULT" | python3 -m json.tool
 check "$RESULT" 'Asteroid Hunter' "Asteroid Hunter badge not earned"
 
@@ -41,7 +41,7 @@ echo -e "\n=== BADGE: Sharpshooter (16 enemies) ==="
 RESULT=$(curl -s -X POST "$BASE_URL/api/game-event" \
   -H "X-Intern-ID: $USER" \
   -H "Content-Type: application/json" \
-  -d '{"enemies_destroyed": 16, "died": true}')
+  -d '{"enemies_destroyed": 16, "deaths": 1}')
 echo "$RESULT" | python3 -m json.tool
 check "$RESULT" 'Sharpshooter' "Sharpshooter badge not earned"
 
@@ -51,13 +51,13 @@ for i in $(seq 1 6); do
   curl -s -X POST "$BASE_URL/api/game-event" \
     -H "X-Intern-ID: $USER" \
     -H "Content-Type: application/json" \
-    -d '{"enemies_destroyed": 2, "died": true}' > /dev/null
+    -d '{"enemies_destroyed": 2, "deaths": 1}' > /dev/null
 done
 # Game 10 should trigger it
 RESULT=$(curl -s -X POST "$BASE_URL/api/game-event" \
   -H "X-Intern-ID: $USER" \
   -H "Content-Type: application/json" \
-  -d '{"enemies_destroyed": 2, "died": true}')
+  -d '{"enemies_destroyed": 2, "deaths": 1}')
 echo "$RESULT" | python3 -m json.tool
 check "$RESULT" 'Dedicated' "Dedicated badge not earned at 10 games"
 
@@ -67,13 +67,13 @@ for i in $(seq 1 9); do
   curl -s -X POST "$BASE_URL/api/game-event" \
     -H "X-Intern-ID: $USER" \
     -H "Content-Type: application/json" \
-    -d '{"enemies_destroyed": 1, "died": true}' > /dev/null
+    -d '{"enemies_destroyed": 1, "deaths": 1}' > /dev/null
 done
 # Death 20 should trigger it
 RESULT=$(curl -s -X POST "$BASE_URL/api/game-event" \
   -H "X-Intern-ID: $USER" \
   -H "Content-Type: application/json" \
-  -d '{"enemies_destroyed": 1, "died": true}')
+  -d '{"enemies_destroyed": 1, "deaths": 1}')
 echo "$RESULT" | python3 -m json.tool
 check "$RESULT" 'Respawn King' "Respawn King badge not earned at 20 deaths"
 
@@ -82,7 +82,7 @@ echo -e "\n=== BADGE: Centurion (pushing lifetime enemies past 100) ==="
 RESULT=$(curl -s -X POST "$BASE_URL/api/game-event" \
   -H "X-Intern-ID: $USER" \
   -H "Content-Type: application/json" \
-  -d '{"enemies_destroyed": 60, "died": false}')
+  -d '{"enemies_destroyed": 60, "deaths": 0}')
 echo "$RESULT" | python3 -m json.tool
 check "$RESULT" 'Centurion' "Centurion badge not earned"
 
@@ -130,7 +130,7 @@ echo -e "\n=== GAME EVENT AFTER ACL BLOCK (expect 403) ==="
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE_URL/api/game-event" \
   -H "X-Intern-ID: $USER" \
   -H "Content-Type: application/json" \
-  -d '{"enemies_destroyed": 10, "died": true}')
+  -d '{"enemies_destroyed": 10, "deaths": 1}')
 echo "HTTP $HTTP_CODE"
 [ "$HTTP_CODE" = "403" ] || fail "Expected 403, got $HTTP_CODE"
 

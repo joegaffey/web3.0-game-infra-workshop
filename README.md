@@ -92,7 +92,7 @@ What gets sent to the server:
   "@context": "https://schema.org",
   "@type": "GameSession",
   "enemies_destroyed": 7,
-  "died": true
+  "deaths": 1
 }
 ```
 
@@ -101,7 +101,7 @@ What gets sent to the server:
 | `@context` | string | Vocabulary source — declares the data format standard |
 | `@type` | string | What this data represents |
 | `enemies_destroyed` | number | Enemies destroyed this session |
-| `died` | boolean | `true` if player died, `false` if paused |
+| `deaths` | number | Number of times the player died this session |
 
 The server tracks cumulative stats across sessions and awards badges:
 
@@ -121,7 +121,7 @@ Call `save_progress()` at game boundary conditions with your session data:
 ```python
 if player_lives <= 0 and game_state == "RUNNING":
     game_state = "GAME_OVER"
-    save_progress({"enemies_destroyed": asteroids_destroyed, "died": True})
+    save_progress({"enemies_destroyed": asteroids_destroyed, "deaths": 1})
 ```
 
 #### On Pause
@@ -130,7 +130,7 @@ if event.type == pygame.KEYDOWN:
     if event.key == pygame.K_p:
         if game_state == "RUNNING":
             game_state = "PAUSED"
-            save_progress({"enemies_destroyed": asteroids_destroyed, "died": False})
+            save_progress({"enemies_destroyed": asteroids_destroyed, "deaths": 0})
         elif game_state == "PAUSED":
             game_state = "RUNNING"
 ```

@@ -117,7 +117,7 @@ app.post("/api/pod/:username/acl", (req, res) => {
 // POST: Accepts atomic session summary packages from Pygame client on death or pause menus
 app.post("/api/game-event", (req, res) => {
     const authId = req.headers["x-intern-id"];
-    const { enemies_destroyed, session_length, died, count } = req.body;
+    const { enemies_destroyed, deaths, count } = req.body;
 
     if (!authId || !PODS[authId]) {
         return res.status(401).json({ error: "Unauthorized: Missing valid Client Identification Header." });
@@ -128,18 +128,16 @@ app.post("/api/game-event", (req, res) => {
         return res.status(403).json({ error: "Sovereign Override: Local Pod configuration rejected update transaction calculation request." });
     }
 
-    // Support both legacy { count } and new { enemies_destroyed, session_length, died } payload
+    // Support both legacy { count } and new { enemies_destroyed, deaths } payload
     const enemies = Number(enemies_destroyed) || Number(count) || 0;
-    const sessionLength = Number(session_length) || 0;
-    const playerDied = died === true;
+    const sessionDeaths = Number(deaths) || 0;
 
     const pod = PODS[authId];
 
     // Update cumulative stats
     pod.stats.games += 1;
     pod.stats.enemies += enemies;
-    if (playerDied) pod.stats.deaths += 1;
-    if (sessionLength > pod.stats.longestSession) pod.stats.longestSession = sessionLength;
+    pod.stats.deaths += sessionDeaths;
 
     // Update high score
     if (enemies > pod.highscore) {
@@ -147,7 +145,7 @@ app.post("/api/game-event", (req, res) => {
     }
 
     // Session context for badge checks
-    const session = { enemies, sessionLength };
+    const session = { enemies, sessionLength: 0 };
 
     // Evaluate all badge definitions
     const newBadges = [];

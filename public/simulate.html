@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Game Session Simulator</title>
+    <style>
+        body { font-family: monospace; background: #0f0f1a; color: #00ffcc; padding: 40px; max-width: 500px; margin: auto; }
+        input, button { width: 100%; box-sizing: border-box; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #444; color: #fff; font-size: 1rem; }
+        button { background: #4ecca3; color: #1a1a2e; font-weight: bold; cursor: pointer; border: none; }
+        button:hover { background: #45b391; }
+        label { display: block; margin-top: 15px; color: #888; font-size: 0.85rem; }
+        .response { display: none; background: #161625; border: 1px solid #2b2b40; padding: 20px; margin-top: 20px; border-radius: 4px; white-space: pre-wrap; font-size: 0.85rem; color: #00ff00; max-height: 300px; overflow-y: auto; }
+        a { color: #ff007f; display: block; margin: 10px 0; text-decoration: none; font-weight: bold; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <h2>🎮 Game Session Simulator</h2>
+    <p>Simulate a Pygame session by submitting data directly to your outbox:</p>
+
+    <label>Gamertag</label>
+    <input type="text" id="gamertag" placeholder="e.g., void_runner">
+
+    <label>Enemies Destroyed</label>
+    <input type="number" id="enemies" value="7" min="0">
+
+    <label>Deaths This Session</label>
+    <input type="number" id="deaths" value="1" min="0">
+
+    <button onclick="submitSession()">Submit Session to Outbox</button>
+
+    <div class="response" id="request"></div>
+    <div class="response" id="response"></div>
+
+    <a href="/global-leaderboard.html">🏆 [View Leaderboard]</a>
+    <a href="/index.html" style="color:#666;">← Back to Hub</a>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const prefill = urlParams.get('id');
+        if (prefill) document.getElementById('gamertag').value = prefill;
+
+        async function submitSession() {
+            const gamertag = document.getElementById('gamertag').value.trim();
+            const enemies = parseInt(document.getElementById('enemies').value) || 0;
+            const deaths = parseInt(document.getElementById('deaths').value) || 0;
+            const requestEl = document.getElementById('request');
+            const responseEl = document.getElementById('response');
+
+            if (!gamertag) { alert('Enter a gamertag first.'); return; }
+
+            const payload = {
+                "@context": "https://schema.org",
+                "@type": "GameSession",
+                "enemies_destroyed": enemies,
+                "deaths": deaths
+            };
+
+            requestEl.style.display = 'block';
+            requestEl.textContent = `POST /users/${gamertag}/outbox\n\n` + JSON.stringify(payload, null, 2);
+
+            try {
+                const res = await fetch(`/users/${gamertag}/outbox`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                responseEl.style.display = 'block';
+                responseEl.textContent = JSON.stringify(data, null, 2);
+            } catch (err) {
+                responseEl.style.display = 'block';
+                responseEl.textContent = `Error: ${err.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

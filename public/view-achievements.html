@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Achievements</title>
+    <title>The Last Arcade — My Achievements</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -13,8 +13,45 @@
             min-height: 100vh;
             color: #e0e0e0;
             display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 20px 40px;
+        }
+
+        .hero {
+            display: flex;
+            align-items: center;
             justify-content: center;
-            padding: 40px 20px;
+            gap: 16px;
+            padding: 24px 20px;
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 50%, rgba(139, 92, 246, 0.1), transparent 60%);
+            pointer-events: none;
+        }
+
+        .hero__title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -0.5px;
+        }
+
+        .hero__tagline {
+            font-size: 0.85rem;
+            color: #8b5cf6;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            border-left: 2px solid rgba(139, 92, 246, 0.4);
+            padding-left: 12px;
         }
 
         .container {
@@ -184,6 +221,10 @@
     </style>
 </head>
 <body>
+    <header class="hero">
+        <h1 class="hero__title">🕹️ The Last Arcade</h1>
+        <p class="hero__tagline">Indie Gaming Community</p>
+    </header>
     <div class="container">
         <!-- Profile & Score -->
         <div class="panel panel--profile">

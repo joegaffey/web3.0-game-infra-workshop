@@ -265,10 +265,6 @@
         document.getElementById('username').textContent = internId;
         document.getElementById('lnkAcl').href = `/acl.html?id=${internId}`;
 
-        const badgeDescriptions = {
-            'Asteroid Hunter': 'Destroyed 5+ asteroids in a single session'
-        };
-
         fetch(`/pods/${internId}/achievements`)
             .then(res => {
                 if (res.status === 403) throw new Error('Access blocked by your ACL settings. Enable read access to view your data.');
@@ -288,10 +284,10 @@
 
                 el.innerHTML = data.items.map(badge => `
                     <li class="badge">
-                        <span class="badge__icon">🏅</span>
+                        <span class="badge__icon">${badge.name.split(' ')[0]}</span>
                         <div class="badge__info">
-                            <div class="badge__name">${escapeHtml(badge)}</div>
-                            <div class="badge__desc">${badgeDescriptions[badge] || 'Achievement unlocked'}</div>
+                            <div class="badge__name">${escapeHtml(badge.name.slice(badge.name.indexOf(' ') + 1))}</div>
+                            <div class="badge__desc">${escapeHtml(badge.desc)}</div>
                         </div>
                     </li>
                 `).join('');

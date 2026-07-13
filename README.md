@@ -32,7 +32,7 @@ telco-workshop/
 
 ## 🚀 Step 1: Provision Your Cloud Data Footprint
 
-1. Navigate to the workshop terminal platform: `https://YOUR_CODESANDBOX_URL/`
+1. Start the server (`npm start`) and navigate to the workshop portal (e.g., `http://localhost:3000/`).
 2. Enter your unique workspace handle identifier (e.g., `intern_01`) to provision your container structures.
 3. Your server instance initializes two sovereign objects in memory:
    * **Telemetry Store:** Tracks score records.
@@ -51,13 +51,13 @@ Drop this clean, sequential communication framework into the initialization phas
 ```python
 import requests
 
-# 1. Update these constants to target your live cloud environment node
-SANDBOX_URL = "https://YOUR_CODESANDBOX_INSTANCE_SUBDOMAIN.csb.app"
+# 1. Update these constants to target your server
+SERVER_URL = "http://localhost:3000"
 INTERN_HANDLE = "YOUR_REGISTERED_HANDLE_ID"
 
 def sync_session_summary_to_pod(asteroids_cleared):
     """Dispatches atomic batch summary metrics up to the Solid Pod on death or pause."""
-    url = f"{SANDBOX_URL}/api/game-event"
+    url = f"{SERVER_URL}/api/game-event"
     headers = {
         "X-Intern-ID": INTERN_HANDLE,
         "Content-Type": "application/json"
@@ -120,7 +120,7 @@ if event.type == pygame.KEYDOWN:
 Once you have successfully earned a score of **5 or higher**, monitor the room projector display dashboard at `/global-leaderboard.html`. Your achievement is verified by the central auditor and broadcasted via **ActivityPub** across the live stream.
 
 ### 🛡️ Execute the Data Governance Override Lab:
-1. Open your browser and access your security perimeter workspace dashboard panel: `https://YOUR_CODESANDBOX_URL/acl.html?id=YOUR_ID`
+1. Open your browser and access your ACL dashboard: `http://localhost:3000/acl.html?id=YOUR_ID`
 2. **Uncheck** both configuration checkmarks to block telemetry visibility and opt out of public global federation.
 3. Click **Update Sovereign Authorization Boundaries**.
 4. Rerun your local Python executable game loop and achieve another high score.

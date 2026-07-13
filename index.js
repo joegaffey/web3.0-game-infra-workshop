@@ -3,7 +3,6 @@ const cors = require("cors");
 const path = require("path");
 const app = express();
 
-// CodeSandbox dynamic port assignment
 const PORT = process.env.PORT || 3000;
 
 // Middleware configuration
@@ -48,7 +47,7 @@ app.post('/api/register', (req, res) => {
     // Return raw, structured status objects. Let the frontend viewer handle routing navigation links.
     return res.status(201).json({
         success: true,
-        webId: `https://codesandbox.io{safeId}`,
+        webId: safeId,
         internId: safeId
     });
 });
@@ -127,7 +126,7 @@ app.post("/api/game-event", (req, res) => {
         const activityPayload = {
             "@context": "https://w3.org",
             "type": "Announce",
-            "actor": `https://codesandbox.io{authId}`,
+            "actor": authId,
             "summary": `🚀 [ActivityPub] Intern "${authId}" earned the 'Asteroid Hunter' badge with a score of ${scoreSession}!`
         };
 
@@ -158,8 +157,7 @@ app.post("/api/game-event", (req, res) => {
 app.get("/api/global-feed", (req, res) => {
     // Dynamic Privacy Filter: Discard stream items if actor changed their ACL checkmarks to false
     const filteredFeed = GLOBAL_FEED.filter(act => {
-        const actorParts = act.actor.split('/');
-        const id = actorParts[actorParts.length - 1];
+        const id = act.actor;
         return ACL[id] ? ACL[id].globalOptIn !== false : true;
     });
     return res.status(200).json(filteredFeed);
@@ -191,5 +189,5 @@ app.get("/", (req, res) => {
 
 // Start the server infrastructure instance execution loop
 app.listen(PORT, () => {
-    console.log(`🚀 CodeSandbox Central Stack active and executing on port ${PORT}`);
+    console.log(`🚀 Server active on port ${PORT}`);
 });

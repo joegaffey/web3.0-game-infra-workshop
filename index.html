@@ -102,21 +102,21 @@
     <script>
       async function fetchLeaderboard() {
         try {
-          const response = await fetch("/federated/leaderboard");
+          const response = await fetch("/api/global-leaderboard");
           const data = await response.json();
           const container = document.getElementById("leaderboard-target");
 
-          if (!data.leaderboard || data.leaderboard.length === 0) {
+          if (!data || data.length === 0) {
             container.innerHTML =
               '<div class="empty-state">Waiting for students to broadcast game activities...</div>';
             return;
           }
 
-          container.innerHTML = data.leaderboard
+          container.innerHTML = data
             .map(
               (player, index) => `
                     <div class="row ${index < 3 ? "top-three" : ""}">
-                        
+                        <div class="identity">
                             <span class="rank">#${index + 1}</span>
                             <span class="username">🛸 ${escapeHtml(
                               player.username

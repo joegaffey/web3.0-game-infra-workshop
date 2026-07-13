@@ -58,26 +58,26 @@
         const currentDomain = window.location.origin;
         document.getElementById('codeBlock').textContent = `import requests
 
-def sync_session_to_cloud(asteroids_destroyed):
-    # Dynamic target matching your active deployment container instance url
-    url = "${currentDomain}/api/game-event"
-    
-    headers = {
-        "X-Intern-ID": "YOUR_PROVISIONED_HANDLE_ID",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "count": int(asteroids_destroyed)
-    }
-    
+SERVER_URL = "${currentDomain}"
+GAMERTAG = "YOUR_GAMERTAG"
+
+def save_progress(payload):
+    """Sends your game session data as JSON-LD to your Solid Pod."""
+    linked_data = {"@context": "https://schema.org", "@type": "GameSession", **payload}
     try:
-        response = requests.post(url, json=payload, headers=headers, timeout=2.0)
+        response = requests.post(
+            f"{SERVER_URL}/users/{GAMERTAG}/outbox",
+            json=linked_data,
+            headers={"Content-Type": "application/json"},
+            timeout=2.0
+        )
         if response.status_code == 200:
-            print("💾 Synchronized successfully to Sovereign Pod.")
+            data = response.json()
+            print(f"✅ Saved! High Score: {data.get('verifiedHighScore')}")
         elif response.status_code == 403:
-            print("⚠️ Update calculation rejected by your custom Pod ACL permissions.")
+            print("⚠️ Blocked by your ACL permissions.")
     except requests.RequestException:
-        print("🔌 Network timeout. Defaulting to isolated edge execution cache.")`;
+        print("⚠️ Network timeout.")`;
     </script>
 </body>
 </html>

@@ -19,8 +19,7 @@ check "$RESULT" 'success' "Registration failed"
 
 # 2. Game event (score < 5, no badge)
 echo -e "\n=== GAME EVENT (3 enemies, died) ==="
-RESULT=$(curl -s -X POST "$BASE_URL/api/game-event" \
-  -H "X-Intern-ID: $USER" \
+RESULT=$(curl -s -X POST "$BASE_URL/users/$USER/outbox" \
   -H "Content-Type: application/json" \
   -d '{"enemies_destroyed": 3, "deaths": 1}')
 echo "$RESULT" | python3 -m json.tool
@@ -29,8 +28,7 @@ echo "$RESULT" | grep -q 'Asteroid Hunter' && fail "Should NOT earn badge at sco
 
 # 3. 🏅 Asteroid Hunter — 5+ enemies in one session
 echo -e "\n=== BADGE: Asteroid Hunter (7 enemies) ==="
-RESULT=$(curl -s -X POST "$BASE_URL/api/game-event" \
-  -H "X-Intern-ID: $USER" \
+RESULT=$(curl -s -X POST "$BASE_URL/users/$USER/outbox" \
   -H "Content-Type: application/json" \
   -d '{"enemies_destroyed": 7, "deaths": 1}')
 echo "$RESULT" | python3 -m json.tool
@@ -38,8 +36,7 @@ check "$RESULT" 'Asteroid Hunter' "Asteroid Hunter badge not earned"
 
 # 4. 🔥 Sharpshooter — 15+ enemies in one session
 echo -e "\n=== BADGE: Sharpshooter (16 enemies) ==="
-RESULT=$(curl -s -X POST "$BASE_URL/api/game-event" \
-  -H "X-Intern-ID: $USER" \
+RESULT=$(curl -s -X POST "$BASE_URL/users/$USER/outbox" \
   -H "Content-Type: application/json" \
   -d '{"enemies_destroyed": 16, "deaths": 1}')
 echo "$RESULT" | python3 -m json.tool
@@ -48,14 +45,12 @@ check "$RESULT" 'Sharpshooter' "Sharpshooter badge not earned"
 # 5. 🎮 Dedicated — 10+ games played (we've played 3 so far, need 7 more)
 echo -e "\n=== BADGE: Dedicated (playing more games) ==="
 for i in $(seq 1 6); do
-  curl -s -X POST "$BASE_URL/api/game-event" \
-    -H "X-Intern-ID: $USER" \
+  curl -s -X POST "$BASE_URL/users/$USER/outbox" \
     -H "Content-Type: application/json" \
     -d '{"enemies_destroyed": 2, "deaths": 1}' > /dev/null
 done
 # Game 10 should trigger it
-RESULT=$(curl -s -X POST "$BASE_URL/api/game-event" \
-  -H "X-Intern-ID: $USER" \
+RESULT=$(curl -s -X POST "$BASE_URL/users/$USER/outbox" \
   -H "Content-Type: application/json" \
   -d '{"enemies_destroyed": 2, "deaths": 1}')
 echo "$RESULT" | python3 -m json.tool
@@ -64,14 +59,12 @@ check "$RESULT" 'Dedicated' "Dedicated badge not earned at 10 games"
 # 6. 💀 Respawn King — 20+ deaths (we have 10 so far, need 10 more)
 echo -e "\n=== BADGE: Respawn King (dying more times) ==="
 for i in $(seq 1 9); do
-  curl -s -X POST "$BASE_URL/api/game-event" \
-    -H "X-Intern-ID: $USER" \
+  curl -s -X POST "$BASE_URL/users/$USER/outbox" \
     -H "Content-Type: application/json" \
     -d '{"enemies_destroyed": 1, "deaths": 1}' > /dev/null
 done
 # Death 20 should trigger it
-RESULT=$(curl -s -X POST "$BASE_URL/api/game-event" \
-  -H "X-Intern-ID: $USER" \
+RESULT=$(curl -s -X POST "$BASE_URL/users/$USER/outbox" \
   -H "Content-Type: application/json" \
   -d '{"enemies_destroyed": 1, "deaths": 1}')
 echo "$RESULT" | python3 -m json.tool
@@ -79,23 +72,23 @@ check "$RESULT" 'Respawn King' "Respawn King badge not earned at 20 deaths"
 
 # 7. ⭐ Centurion — 100+ lifetime enemies (tally so far and send remainder)
 echo -e "\n=== BADGE: Centurion (pushing lifetime enemies past 100) ==="
-RESULT=$(curl -s -X POST "$BASE_URL/api/game-event" \
-  -H "X-Intern-ID: $USER" \
+RESULT=$(curl -s -X POST "$BASE_URL/users/$USER/outbox" \
   -H "Content-Type: application/json" \
   -d '{"enemies_destroyed": 60, "deaths": 0}')
 echo "$RESULT" | python3 -m json.tool
 check "$RESULT" 'Centurion' "Centurion badge not earned"
 
-# 8. ⏱️ Marathon Runner — 120+ seconds (advanced: game-start / game-end)
+# 8. ⏱️ Marathon Runner — 120+ seconds (advanced: outbox Start/End)
 echo -e "\n=== BADGE: Marathon Runner (advanced session tracking) ==="
-curl -s -X POST "$BASE_URL/api/game-start" \
-  -H "X-Intern-ID: $USER" > /dev/null
-# Simulate 121 seconds by manipulating — we'll just test the endpoint works
+curl -s -X POST "$BASE_URL/users/$USER/outbox" \
+  -H "Content-Type: application/json" \
+  -d '{"type": "Start"}' > /dev/null
 # In real usage the server tracks elapsed time; here we test the API contract
-RESULT=$(curl -s -X POST "$BASE_URL/api/game-end" \
-  -H "X-Intern-ID: $USER")
+RESULT=$(curl -s -X POST "$BASE_URL/users/$USER/outbox" \
+  -H "Content-Type: application/json" \
+  -d '{"type": "End"}')
 echo "$RESULT" | python3 -m json.tool
-check "$RESULT" 'sessionLength' "Session length not returned from game-end"
+check "$RESULT" 'sessionLength' "Session length not returned from End activity"
 
 # 9. Check all achievements via personal outbox
 echo -e "\n=== PERSONAL OUTBOX ==="
@@ -128,8 +121,7 @@ curl -s -X POST "$BASE_URL/api/pod/$USER/acl" \
 echo ""
 
 echo -e "\n=== GAME EVENT AFTER ACL BLOCK (expect 403) ==="
-HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE_URL/api/game-event" \
-  -H "X-Intern-ID: $USER" \
+HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$BASE_URL/users/$USER/outbox" \
   -H "Content-Type: application/json" \
   -d '{"enemies_destroyed": 10, "deaths": 1}')
 echo "HTTP $HTTP_CODE"

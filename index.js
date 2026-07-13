@@ -85,43 +85,92 @@ app.post("/api/pod/:username/acl", (req, res) => {
 });
 
 // ==========================================
-// 🎮 3. PYGAME WORKSHOP BATCHING GATEWAY
+// 🎮 3. ACTIVITYPUB OUTBOX (POST & GET)
 // ==========================================
 
-// POST: Accepts atomic session summary packages from Pygame client on death or pause menus
-app.post("/api/game-event", (req, res) => {
-    const authId = req.headers["x-intern-id"];
-    const { enemies_destroyed, deaths, count } = req.body;
+// POST: Publish an activity to a user's outbox
+// Accepts: GameSession (score data), Start (begin timer), End (stop timer)
+app.post("/users/:username/outbox", (req, res) => {
+    const { username } = req.params;
+    const { type, enemies_destroyed, deaths, count } = req.body;
 
-    if (!authId || !PODS[authId]) {
-        return res.status(401).json({ error: "Unauthorized: Missing valid Client Identification Header." });
+    if (!PODS[username]) {
+        return res.status(404).json({ error: "User not found. Register first." });
     }
 
-    // Enforce Auditor Access check: can the server compute updates using the pod data footprint?
-    if (ACL[authId] && ACL[authId].readAllowed === false) {
-        return res.status(403).json({ error: "Sovereign Override: Local Pod configuration rejected update transaction calculation request." });
+    if (ACL[username] && ACL[username].readAllowed === false) {
+        return res.status(403).json({ error: "Sovereign Override: Your ACL permissions rejected this request." });
     }
 
-    // Support both legacy { count } and new { enemies_destroyed, deaths } payload
+    const pod = PODS[username];
+
+    // --- Activity: Start (begin session timer) ---
+    if (type === "Start") {
+        SESSIONS[username] = Date.now();
+        return res.status(200).json({ success: true, message: "Session started." });
+    }
+
+    // --- Activity: End (stop session timer, compute duration) ---
+    if (type === "End") {
+        let sessionLength = 0;
+        if (SESSIONS[username]) {
+            sessionLength = Math.floor((Date.now() - SESSIONS[username]) / 1000);
+            delete SESSIONS[username];
+        }
+
+        if (sessionLength > pod.stats.longestSession) {
+            pod.stats.longestSession = sessionLength;
+        }
+
+        const session = { enemies: 0, sessionLength };
+        const newBadges = evaluateBadges(pod, session, username);
+
+        return res.status(200).json({
+            success: true,
+            sessionLength,
+            newBadges: newBadges.map(b => b.name)
+        });
+    }
+
+    // --- Activity: GameSession (default — score submission) ---
     const enemies = Number(enemies_destroyed) || Number(count) || 0;
     const sessionDeaths = Number(deaths) || 0;
 
-    const pod = PODS[authId];
-
-    // Update cumulative stats
     pod.stats.games += 1;
     pod.stats.enemies += enemies;
     pod.stats.deaths += sessionDeaths;
 
-    // Update high score
     if (enemies > pod.highscore) {
         pod.highscore = enemies;
     }
 
-    // Session context for badge checks
     const session = { enemies, sessionLength: 0 };
+    const newBadges = evaluateBadges(pod, session, username);
 
-    // Evaluate all badge definitions
+    // Update leaderboard (upsert)
+    const existingEntry = LEADERBOARD.find(e => e.username === username);
+    if (existingEntry) {
+        existingEntry.score = pod.highscore;
+        existingEntry.timestamp = new Date().toLocaleTimeString();
+    } else if (pod.highscore > 0) {
+        LEADERBOARD.push({
+            username,
+            score: pod.highscore,
+            timestamp: new Date().toLocaleTimeString()
+        });
+    }
+    LEADERBOARD.sort((a, b) => b.score - a.score);
+
+    return res.status(200).json({
+        success: true,
+        verifiedHighScore: pod.highscore,
+        newBadges: newBadges.map(b => b.name),
+        stats: pod.stats
+    });
+});
+
+// Helper: evaluate badges and broadcast announcements
+function evaluateBadges(pod, session, username) {
     const newBadges = [];
     for (const badge of BADGE_DEFINITIONS) {
         if (!pod.badges.includes(badge.id) && badge.check(pod, session)) {
@@ -129,104 +178,16 @@ app.post("/api/game-event", (req, res) => {
             newBadges.push(badge);
         }
     }
-
-    // Broadcast new badges to ActivityPub feed
     for (const badge of newBadges) {
         GLOBAL_FEED.unshift({
-            "@context": "https://w3.org",
+            "@context": "https://www.w3.org/ns/activitystreams",
             "type": "Announce",
-            "actor": authId,
-            "summary": `🚀 ${authId} earned the '${badge.name}' badge!`
+            "actor": username,
+            "summary": `🚀 ${username} earned the '${badge.name}' badge!`
         });
     }
-
-    // Update leaderboard (upsert — update existing entry or add new one)
-    const existingEntry = LEADERBOARD.find(e => e.username === authId);
-    if (existingEntry) {
-        existingEntry.score = pod.highscore;
-        existingEntry.timestamp = new Date().toLocaleTimeString();
-    } else if (pod.highscore > 0) {
-        LEADERBOARD.push({
-            username: authId,
-            score: pod.highscore,
-            timestamp: new Date().toLocaleTimeString()
-        });
-    }
-    LEADERBOARD.sort((a, b) => b.score - a.score);
-
-    // Echo current state back to the caller
-    return res.status(200).json({ 
-        success: true, 
-        verifiedHighScore: pod.highscore,
-        newBadges: newBadges.map(b => b.name),
-        stats: pod.stats
-    });
-});
-
-// =======================================================
-// ⏱️ 4. ADVANCED: SERVER-TRACKED SESSION LENGTH
-// =======================================================
-
-// POST: Signal game session start (advanced exercise)
-app.post("/api/game-start", (req, res) => {
-    const authId = req.headers["x-intern-id"];
-
-    if (!authId || !PODS[authId]) {
-        return res.status(401).json({ error: "Unauthorized: Missing valid Client Identification Header." });
-    }
-
-    SESSIONS[authId] = Date.now();
-    return res.status(200).json({ success: true, message: "Session started." });
-});
-
-// POST: Signal game session end — computes session length server-side (advanced exercise)
-app.post("/api/game-end", (req, res) => {
-    const authId = req.headers["x-intern-id"];
-
-    if (!authId || !PODS[authId]) {
-        return res.status(401).json({ error: "Unauthorized: Missing valid Client Identification Header." });
-    }
-
-    let sessionLength = 0;
-    if (SESSIONS[authId]) {
-        sessionLength = Math.floor((Date.now() - SESSIONS[authId]) / 1000);
-        delete SESSIONS[authId];
-    }
-
-    // Update longest session stat
-    if (sessionLength > PODS[authId].stats.longestSession) {
-        PODS[authId].stats.longestSession = sessionLength;
-    }
-
-    // Check for Marathon Runner badge
-    const session = { enemies: 0, sessionLength };
-    const newBadges = [];
-    for (const badge of BADGE_DEFINITIONS) {
-        if (!PODS[authId].badges.includes(badge.id) && badge.check(PODS[authId], session)) {
-            PODS[authId].badges.push(badge.id);
-            newBadges.push(badge);
-        }
-    }
-
-    for (const badge of newBadges) {
-        GLOBAL_FEED.unshift({
-            "@context": "https://w3.org",
-            "type": "Announce",
-            "actor": authId,
-            "summary": `🚀 ${authId} earned the '${badge.name}' badge!`
-        });
-    }
-
-    return res.status(200).json({
-        success: true,
-        sessionLength,
-        newBadges: newBadges.map(b => b.name)
-    });
-});
-
-// =======================================================
-// 📡 5. ACTIVITYPUB OUTBOX
-// =======================================================
+    return newBadges;
+}
 
 // GET: Personal outbox — returns a single user's ActivityPub activities
 app.get("/users/:username/outbox", (req, res) => {

@@ -68,9 +68,9 @@ def save_progress(payload):
     linked_data = {"@context": "https://schema.org", "@type": "GameSession", **payload}
     try:
         response = requests.post(
-            f"{SERVER_URL}/api/game-event",
+            f"{SERVER_URL}/users/{GAMERTAG}/outbox",
             json=linked_data,
-            headers={"X-Intern-ID": GAMERTAG},
+            headers={"Content-Type": "application/json"},
             timeout=2.0
         )
         if response.status_code == 200:
@@ -175,11 +175,11 @@ bash test.sh neon_ghost   # test with a specific gamertag
 
 ## 🚀 Advanced: Server-Tracked Session Length
 
-For a bonus challenge, the server supports tracking how long you survive using start/end signals. This unlocks the **⏱️ Marathon Runner** badge (survive 120+ seconds).
+For a bonus challenge, the server supports tracking how long you survive using start/end activities posted to your outbox. This unlocks the **⏱️ Marathon Runner** badge (survive 120+ seconds).
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/game-start` | POST | Starts a session timer on the server |
-| `/api/game-end` | POST | Stops the timer and returns `sessionLength` in seconds |
+Post a JSON-LD activity to `POST /users/:gamertag/outbox` with:
 
-Both require the `X-Intern-ID` header. The server calculates the elapsed time — if it's 120+ seconds, you earn the badge.
+- A `type` field set to `"Start"` when the game begins
+- A `type` field set to `"End"` when the game ends
+
+The server calculates the elapsed time between the two — if it's 120+ seconds, you earn the badge. The `End` response includes `sessionLength` in seconds.

@@ -59,55 +59,78 @@ Drop this into your local Python game code:
 ```python
 import requests
 
-# Update these constants to target your server
+# === CONFIGURATION ===
 SERVER_URL = "http://localhost:3000"
 GAMERTAG = "YOUR_GAMERTAG"
 
-def sync_session_summary_to_pod(asteroids_cleared):
-    """Dispatches batch summary metrics to your Solid Pod on death or pause."""
-    url = f"{SERVER_URL}/api/game-event"
-    headers = {
-        "X-Intern-ID": GAMERTAG,
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "count": int(asteroids_cleared)
-    }
-    
-    print(f"📡 Syncing score to The Last Arcade...")
+def save_progress(payload):
+    """Sends your game session data as JSON-LD to your Solid Pod."""
+    linked_data = {"@context": "https://schema.org", "@type": "GameSession", **payload}
     try:
-        response = requests.post(url, json=payload, headers=headers, timeout=2.0)
-        
+        response = requests.post(
+            f"{SERVER_URL}/api/game-event",
+            json=linked_data,
+            headers={"X-Intern-ID": GAMERTAG},
+            timeout=2.0
+        )
         if response.status_code == 200:
-            server_data = response.json()
-            print(f"✅ Sync complete! High Score: {server_data.get('verifiedHighScore')}")
+            data = response.json()
+            print(f"✅ Saved! High Score: {data.get('verifiedHighScore')}")
         elif response.status_code == 403:
-            print("⚠️ Blocked: Your ACL permissions rejected the update.")
+            print("⚠️ Blocked by your ACL permissions.")
         else:
-            print(f"❌ Server error: status {response.status_code}")
-            
+            print(f"❌ Server error: {response.status_code}")
     except requests.RequestException:
-        print("⚠️ Network timeout — falling back to local tracking.")
+        print("⚠️ Network timeout.")
 ```
+
+The function wraps your data in a [JSON-LD](https://json-ld.org/) envelope before sending — this adds `@context` and `@type` fields that make the data self-describing. Any Semantic Web-compatible service can understand what this data represents without needing custom documentation.
+
+What gets sent to the server:
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "GameSession",
+  "enemies_destroyed": 7,
+  "died": true
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `@context` | string | Vocabulary source — declares the data format standard |
+| `@type` | string | What this data represents |
+| `enemies_destroyed` | number | Enemies destroyed this session |
+| `died` | boolean | `true` if player died, `false` if paused |
+
+The server tracks cumulative stats across sessions and awards badges:
+
+| Badge | Condition |
+|-------|-----------|
+| 🏅 Asteroid Hunter | 5+ enemies in one session |
+| 🔥 Sharpshooter | 15+ enemies in one session |
+| 🎮 Dedicated | 10+ total games played |
+| 💀 Respawn King | 20+ total deaths |
+| ⭐ Centurion | 100+ lifetime enemies destroyed |
 
 ### 🎯 Hooking into Game Events
 
-Invoke the sync routine at game boundary conditions:
+Call `save_progress()` at game boundary conditions with your session data:
 
-#### Option A: On Death
+#### On Death
 ```python
 if player_lives <= 0 and game_state == "RUNNING":
     game_state = "GAME_OVER"
-    sync_session_summary_to_pod(asteroids_destroyed)
+    save_progress({"enemies_destroyed": asteroids_destroyed, "died": True})
 ```
 
-#### Option B: On Pause
+#### On Pause
 ```python
 if event.type == pygame.KEYDOWN:
     if event.key == pygame.K_p:
         if game_state == "RUNNING":
             game_state = "PAUSED"
-            sync_session_summary_to_pod(asteroids_destroyed)
+            save_progress({"enemies_destroyed": asteroids_destroyed, "died": False})
         elif game_state == "PAUSED":
             game_state = "RUNNING"
 ```
@@ -135,3 +158,16 @@ Run the end-to-end test script (server must be running):
 bash test.sh              # defaults to "test_user"
 bash test.sh neon_ghost   # test with a specific gamertag
 ```
+
+---
+
+## 🚀 Advanced: Server-Tracked Session Length
+
+For a bonus challenge, the server supports tracking how long you survive using start/end signals. This unlocks the **⏱️ Marathon Runner** badge (survive 120+ seconds).
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/game-start` | POST | Starts a session timer on the server |
+| `/api/game-end` | POST | Stops the timer and returns `sessionLength` in seconds |
+
+Both require the `X-Intern-ID` header. The server calculates the elapsed time — if it's 120+ seconds, you earn the badge.

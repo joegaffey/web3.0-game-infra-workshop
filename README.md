@@ -1,9 +1,9 @@
-# 🛰️ Web 3.0 Infra Workshop
-### Mastering Solid Data Pods, ActivityPub, and Agentic Data Flows via Pygame
+# 🕹️ The Last Arcade
+### Indie Gaming Community — Web 3.0 Infra Workshop
 
-Welcome to the Web 3.0 Infrastructure Workshop! This repository contains a decentralized multi-page state management platform designed to teach the structural evolution of network paradigms. 
+Welcome to The Last Arcade! This repository contains a decentralized gaming platform designed to teach the structural evolution of network paradigms through hands-on Pygame integration.
 
-By upgrading your pyGame game to interact with cloud-hosted personal storage infrastructure, you will experience firsthand how decoupled semantic web architectures replace traditional centralized database profiling.
+By upgrading your Pygame game to interact with a cloud-hosted personal storage infrastructure, you will experience firsthand how decoupled semantic web architectures replace traditional centralized database profiling.
 
 ---
 
@@ -15,113 +15,123 @@ By upgrading your pyGame game to interact with cloud-hosted personal storage inf
 
 ---
 
-## 📂 Repository File System Topology
+## 📂 Repository Structure
 
 ```text
-telco-workshop/
-├── server.js               # Express Multi-Tenant Pod Engine & ActivityPub Router
-├── package.json            # Deployment Package Configurations
-└── public/                 # Stateless Frontend Semantic View Layers
-    ├── index.html          # Decentralized Identity (WebID) Provisioner
-    ├── acl.html            # Sovereign Boundary Governance Panel (Access Control Lists)
-    ├── view-achievements.html # Private Verified Asset Trophy Vault Inspector
-    └── global-leaderboard.html # Federated Room Ticker Feed (Projector Dashboard)
+web3.0-game-infra-workshop/
+├── index.js                # Express server — Pod engine & ActivityPub router
+├── package.json            # Node.js project config
+├── test.sh                 # End-to-end test script
+├── .gitignore              # Git exclusions
+└── public/                 # Frontend pages
+    ├── index.html          # Workshop portal & hub
+    ├── register.html       # Player registration (gamertag provisioning)
+    ├── acl.html            # Permissions manager (Access Control Lists)
+    ├── view-achievements.html  # Personal achievements & badges
+    └── global-leaderboard.html # Live leaderboard & ActivityPub feed
 ```
 
 ---
 
-## 🚀 Step 1: Provision Your Cloud Data Footprint
+## 🚀 Step 1: Start the Server
 
-1. Start the server (`npm start`) and navigate to the workshop portal (e.g., `http://localhost:3000/`).
-2. Enter your unique workspace handle identifier (e.g., `intern_01`) to provision your container structures.
-3. Your server instance initializes two sovereign objects in memory:
-   * **Telemetry Store:** Tracks score records.
-   * **Achievements Ledger:** Holds cryptographic badge tokens.
+1. Install dependencies and start the server:
+   ```bash
+   npm install
+   npm start
+   ```
+2. Navigate to the workshop portal: `http://localhost:3000/`
+3. Pick a gamertag (e.g., `void_runner`, `pixel_ninja`, `neon_ghost`) to provision your player pod.
+4. Your server instance initializes two objects in memory:
+   * **Score Store:** Tracks your high score.
+   * **Achievements Ledger:** Holds unlocked badges.
 
 ---
 
-## 🎮 Step 2: Upgrading the Pygame Client Infrastructure
+## 🎮 Step 2: Upgrading the Pygame Client
 
-Instead of spamming real-time network packets inside the 60 FPS physics thread loop—which introduces micro-stutter frame lag—we bundle, serialize, and emit data payloads strictly at session boundary conditions (**On Death** or **On Pause**).
+Instead of spamming real-time network packets inside the 60 FPS physics loop—which introduces micro-stutter frame lag—we bundle, serialize, and emit data payloads strictly at session boundary conditions (**On Death** or **On Pause**).
 
-### 🛠️ Python Tasks: Hooking Sockets to the Cloud Pod
+### 🛠️ Python Integration
 
-Drop this clean, sequential communication framework into the initialization phase of your local Python source code:
+Drop this into your local Python game code:
 
 ```python
 import requests
 
-# 1. Update these constants to target your server
+# Update these constants to target your server
 SERVER_URL = "http://localhost:3000"
-INTERN_HANDLE = "YOUR_REGISTERED_HANDLE_ID"
+GAMERTAG = "YOUR_GAMERTAG"
 
 def sync_session_summary_to_pod(asteroids_cleared):
-    """Dispatches atomic batch summary metrics up to the Solid Pod on death or pause."""
+    """Dispatches batch summary metrics to your Solid Pod on death or pause."""
     url = f"{SERVER_URL}/api/game-event"
     headers = {
-        "X-Intern-ID": INTERN_HANDLE,
+        "X-Intern-ID": GAMERTAG,
         "Content-Type": "application/json"
     }
     payload = {
         "count": int(asteroids_cleared)
     }
     
-    print(f"📡 Dispatched batch ledger payload down the network wire...")
+    print(f"📡 Syncing score to The Last Arcade...")
     try:
-        # Blocking execution is perfectly fine here because the action loop is frozen
         response = requests.post(url, json=payload, headers=headers, timeout=2.0)
         
         if response.status_code == 200:
             server_data = response.json()
-            print(f"✅ Pod Synchronization Complete!")
-            print(f"🔒 Verified Server-Side High Score Record: {server_data.get('verifiedHighScore')}")
+            print(f"✅ Sync complete! High Score: {server_data.get('verifiedHighScore')}")
         elif response.status_code == 403:
-            print("⚠️ Sovereign Override Block: Server update calculation was rejected by your custom Pod ACL rules.")
+            print("⚠️ Blocked: Your ACL permissions rejected the update.")
         else:
-            print(f"❌ Connection Dropped: Server emitted status code {response.status_code}")
+            print(f"❌ Server error: status {response.status_code}")
             
     except requests.RequestException:
-        print("⚠️ Network Timeout: Client falling back to local data isolation edge tracking.")
+        print("⚠️ Network timeout — falling back to local tracking.")
 ```
 
-### 🎯 Hooking into Game Boundary Physics
+### 🎯 Hooking into Game Events
 
-Locate your health processing conditional flags or user keyboard polling loops to invoke the sync routine precisely at boundary frames.
+Invoke the sync routine at game boundary conditions:
 
-#### Option A: Trigger Execution On Death
+#### Option A: On Death
 ```python
-# Inside your game over status calculation boundary code:
-if player_lives <= 0 and game_current_state == "RUNNING":
-    game_current_state = "GAME_OVER"
-    
-    # Execute batch network commit event on death thread loop freeze
-    sync_session_summary_to_pod(asteroids_destroyed_counter)
+if player_lives <= 0 and game_state == "RUNNING":
+    game_state = "GAME_OVER"
+    sync_session_summary_to_pod(asteroids_destroyed)
 ```
 
-#### Option B: Trigger Execution On Pause
+#### Option B: On Pause
 ```python
-# Inside your keyboard input event management loops:
 if event.type == pygame.KEYDOWN:
-    if event.key == pygame.K_p: # Key mapped to Pause event boundaries
-        if game_current_state == "RUNNING":
-            game_current_state = "PAUSED"
-            
-            # Sync ongoing progress to your private workspace checkpoint
-            sync_session_summary_to_pod(asteroids_destroyed_counter)
-            
-        elif game_current_state == "PAUSED":
-            game_current_state = "RUNNING"
+    if event.key == pygame.K_p:
+        if game_state == "RUNNING":
+            game_state = "PAUSED"
+            sync_session_summary_to_pod(asteroids_destroyed)
+        elif game_state == "PAUSED":
+            game_state = "RUNNING"
 ```
 
 ---
 
-## ⚡ Step 3: Experiencing Absolute Data Sovereignty
+## ⚡ Step 3: Experiencing Data Sovereignty
 
-Once you have successfully earned a score of **5 or higher**, monitor the room projector display dashboard at `/global-leaderboard.html`. Your achievement is verified by the central auditor and broadcasted via **ActivityPub** across the live stream.
+Once you earn a score of **5 or higher**, check the live leaderboard at `/global-leaderboard.html`. Your achievement is verified and broadcasted via **ActivityPub** to the community feed.
 
-### 🛡️ Execute the Data Governance Override Lab:
-1. Open your browser and access your ACL dashboard: `http://localhost:3000/acl.html?id=YOUR_ID`
-2. **Uncheck** both configuration checkmarks to block telemetry visibility and opt out of public global federation.
+### 🛡️ The Data Governance Lab:
+1. Open your permissions page: `http://localhost:3000/acl.html?id=YOUR_GAMERTAG`
+2. **Uncheck** both options to block server visibility and opt out of the public leaderboard.
 3. Click **Update Sovereign Authorization Boundaries**.
-4. Rerun your local Python executable game loop and achieve another high score.
-5. **Observe:** Your terminal will output an explicit `403 Forbidden` verification fault warning. Your application loop continues to execute flawlessly at full speed locally on your device, but the central analytics server is completely blind to your behavior because **you** successfully exercised structural control over your data footprint. 
+4. Play your game again and earn another high score.
+5. **Observe:** Your terminal shows a `403 Forbidden` response. Your game still runs fine locally, but the server can't see or store your data — because **you** control your data footprint.
+
+---
+
+## 🧪 Testing
+
+Run the end-to-end test script (server must be running):
+
+```bash
+bash test.sh              # defaults to "test_user"
+bash test.sh neon_ghost   # test with a specific gamertag
+```

@@ -183,3 +183,34 @@ Post a JSON-LD activity to `POST /users/:gamertag/outbox` with:
 - A `type` field set to `"End"` when the game ends
 
 The server calculates the elapsed time between the two — if it's 120+ seconds, you earn the badge. The `End` response includes `sessionLength` in seconds.
+
+---
+
+## 🧠 Advanced: Design Your Own Achievements
+
+Propose and implement a new badge for the platform. Consider:
+
+1. **What data do you need?** Does your badge require new fields in the game payload, or can it use existing stats (enemies, deaths, games played)?
+2. **Is it per-session or cumulative?** Per-session badges reward a single great run. Cumulative badges reward persistence over time.
+3. **What server changes are needed?** Add your badge definition to the server's badge list with an `id`, `name`, `desc`, and `check` function.
+4. **Does your game need to send new data?** If so, update your `save_progress()` payload and handle the new field on the server.
+
+Examples to inspire you:
+- 🎯 **Pacifist** — survive 30+ seconds without shooting
+- 🧲 **Magnet** — destroy 3 enemies within 2 seconds
+- 🏃 **Speedrun** — reach 10 kills in under 20 seconds
+
+---
+
+## 🧠 Advanced: Update Interval Strategies
+
+The workshop uses boundary-condition batching (send data on death/pause). But there are other approaches — propose and prototype one:
+
+| Strategy | When to send | Pros | Cons |
+|----------|-------------|------|------|
+| **Boundary batch** (current) | On death or pause | Zero frame impact, simple | No live spectating |
+| **Periodic heartbeat** | Every N seconds | Near real-time leaderboard | Network overhead, partial data |
+| **Event-driven** | On significant events (badge earned, new high score) | Minimal traffic, timely | Misses routine progress |
+| **Hybrid** | Heartbeat + boundary | Best of both | More complex client code |
+
+Pick a strategy, implement it in your game, and explain the trade-offs you'd face at scale (1000+ concurrent players).

@@ -26,9 +26,16 @@ let GLOBAL_FEED = [];    // ActivityPub Live Federated Message Queue stream
 const BADGE_DEFINITIONS = [
     { id: "asteroid_hunter", name: "🏅 Asteroid Hunter", desc: "Destroy 5+ enemies in one session", check: (pod, session) => session.enemies >= 5 },
     { id: "sharpshooter", name: "🔥 Sharpshooter", desc: "Destroy 15+ enemies in one session", check: (pod, session) => session.enemies >= 15 },
-    { id: "dedicated", name: "🎮 Dedicated", desc: "Play 10+ games", check: (pod) => pod.stats.games >= 10 },
-    { id: "respawn_king", name: "💀 Respawn King", desc: "Die 20+ times", check: (pod) => pod.stats.deaths >= 20 },
-    { id: "centurion", name: "⭐ Centurion", desc: "Destroy 100+ lifetime enemies", check: (pod) => pod.stats.enemies >= 100 },
+    { id: "destroyer", name: "💥 Destroyer", desc: "Destroy 50+ enemies in one session", check: (pod, session) => session.enemies >= 50 },
+    { id: "dedicated", name: "🎮 Dedicated", desc: "Play 5+ games", check: (pod) => pod.stats.games >= 5 },
+    { id: "addict", name: "🕹️ Addict", desc: "Play 10+ games", check: (pod) => pod.stats.games >= 10 },
+    { id: "lives_here", name: "🏠 Lives Here", desc: "Play 20+ games", check: (pod) => pod.stats.games >= 20 },
+    { id: "respawn_rookie", name: "💀 Respawn Rookie", desc: "Die 5+ times", check: (pod) => pod.stats.deaths >= 5 },
+    { id: "respawn_veteran", name: "☠️ Respawn Veteran", desc: "Die 10+ times", check: (pod) => pod.stats.deaths >= 10 },
+    { id: "respawn_king", name: "👑 Respawn King", desc: "Die 20+ times", check: (pod) => pod.stats.deaths >= 20 },
+    { id: "centurion", name: "⭐ Centurion", desc: "Destroy 20+ lifetime enemies", check: (pod) => pod.stats.enemies >= 20 },
+    { id: "legend", name: "🌟 Legend", desc: "Destroy 50+ lifetime enemies", check: (pod) => pod.stats.enemies >= 50 },
+    { id: "supernova", name: "☀️ Supernova", desc: "Destroy 100+ lifetime enemies", check: (pod) => pod.stats.enemies >= 100 },
     { id: "marathon_runner", name: "⏱️ Marathon Runner", desc: "Survive 120+ seconds in one session (advanced)", check: (pod, session) => session.sessionLength >= 120 },
 ];
 
@@ -201,12 +208,26 @@ app.get("/users/:username/outbox", (req, res) => {
         return res.status(403).json({ error: "This user has opted out of public feeds." });
     }
 
-    // Collect badge announcements for this user
-    const userFeed = GLOBAL_FEED.filter(act => act.actor === username);
+    // Collect badge announcements for this user with descriptions
+    const pod = PODS[username];
+    const userBadges = pod.badges.map(id => {
+        const def = BADGE_DEFINITIONS.find(b => b.id === id);
+        return {
+            "@context": "https://www.w3.org/ns/activitystreams",
+            "type": "Announce",
+            "actor": username,
+            "summary": `🚀 ${username} earned the '${def ? def.name : id}' badge!`,
+            "object": {
+                "type": "Achievement",
+                "name": def ? def.name : id,
+                "description": def ? def.desc : ""
+            }
+        };
+    });
 
     // Add score activity
     const leaderboardEntry = LEADERBOARD.find(e => e.username === username);
-    const items = [...userFeed];
+    const items = [...userBadges];
     if (leaderboardEntry) {
         items.push({
             "@context": "https://www.w3.org/ns/activitystreams",

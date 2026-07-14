@@ -289,14 +289,19 @@
                     return;
                 }
 
-                el.innerHTML = badges.map(act => `
-                    <li class="badge">
-                        <span class="badge__icon">🏅</span>
+                el.innerHTML = badges.map(act => {
+                    const name = act.object ? act.object.name : '';
+                    const desc = act.object ? act.object.description : '';
+                    const icon = name ? name.split(' ')[0] : '🏅';
+                    const label = name ? name.slice(name.indexOf(' ') + 1) : escapeHtml(act.summary);
+                    return `<li class="badge">
+                        <span class="badge__icon">${icon}</span>
                         <div class="badge__info">
-                            <div class="badge__name">${escapeHtml(act.summary)}</div>
+                            <div class="badge__name">${escapeHtml(label)}</div>
+                            <div class="badge__desc">${escapeHtml(desc)}</div>
                         </div>
-                    </li>
-                `).join('');
+                    </li>`;
+                }).join('');
             })
             .catch(err => {
                 document.getElementById('profileError').innerHTML = `<div class="error-state">⚠️ ${escapeHtml(err.message)}</div>`;

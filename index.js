@@ -24,19 +24,19 @@ let GLOBAL_FEED = [];    // ActivityPub Live Federated Message Queue stream
 
 // Badge definitions
 const BADGE_DEFINITIONS = [
-    { id: "asteroid_hunter", name: "🏅 Asteroid Hunter", desc: "Destroy 5+ enemies in one session", check: (pod, session) => session.enemies >= 5 },
-    { id: "sharpshooter", name: "🔥 Sharpshooter", desc: "Destroy 15+ enemies in one session", check: (pod, session) => session.enemies >= 15 },
-    { id: "destroyer", name: "💥 Destroyer", desc: "Destroy 50+ enemies in one session", check: (pod, session) => session.enemies >= 50 },
-    { id: "dedicated", name: "🎮 Dedicated", desc: "Play 5+ games", check: (pod) => pod.stats.games >= 5 },
-    { id: "addict", name: "🕹️ Addict", desc: "Play 10+ games", check: (pod) => pod.stats.games >= 10 },
-    { id: "lives_here", name: "🏠 Lives Here", desc: "Play 20+ games", check: (pod) => pod.stats.games >= 20 },
-    { id: "respawn_rookie", name: "💀 Respawn Rookie", desc: "Die 5+ times", check: (pod) => pod.stats.deaths >= 5 },
-    { id: "respawn_veteran", name: "☠️ Respawn Veteran", desc: "Die 10+ times", check: (pod) => pod.stats.deaths >= 10 },
-    { id: "respawn_king", name: "👑 Respawn King", desc: "Die 20+ times", check: (pod) => pod.stats.deaths >= 20 },
-    { id: "centurion", name: "⭐ Centurion", desc: "Destroy 20+ lifetime enemies", check: (pod) => pod.stats.enemies >= 20 },
-    { id: "legend", name: "🌟 Legend", desc: "Destroy 50+ lifetime enemies", check: (pod) => pod.stats.enemies >= 50 },
-    { id: "supernova", name: "☀️ Supernova", desc: "Destroy 100+ lifetime enemies", check: (pod) => pod.stats.enemies >= 100 },
-    { id: "marathon_runner", name: "⏱️ Marathon Runner", desc: "Survive 120+ seconds in one session (advanced)", check: (pod, session) => session.sessionLength >= 120 },
+    { id: "asteroid_hunter", name: "🏅 Asteroid Hunter", desc: "Destroy 5+ enemies in one session", points: 5, check: (pod, session) => session.enemies >= 5 },
+    { id: "sharpshooter", name: "🔥 Sharpshooter", desc: "Destroy 15+ enemies in one session", points: 15, check: (pod, session) => session.enemies >= 15 },
+    { id: "destroyer", name: "💥 Destroyer", desc: "Destroy 50+ enemies in one session", points: 50, check: (pod, session) => session.enemies >= 50 },
+    { id: "dedicated", name: "🎮 Dedicated", desc: "Play 5+ games", points: 5, check: (pod) => pod.stats.games >= 5 },
+    { id: "addict", name: "🕹️ Addict", desc: "Play 10+ games", points: 10, check: (pod) => pod.stats.games >= 10 },
+    { id: "lives_here", name: "🏠 Lives Here", desc: "Play 20+ games", points: 20, check: (pod) => pod.stats.games >= 20 },
+    { id: "respawn_rookie", name: "💀 Respawn Rookie", desc: "Die 5+ times", points: 5, check: (pod) => pod.stats.deaths >= 5 },
+    { id: "respawn_veteran", name: "☠️ Respawn Veteran", desc: "Die 10+ times", points: 10, check: (pod) => pod.stats.deaths >= 10 },
+    { id: "respawn_king", name: "👑 Respawn King", desc: "Die 20+ times", points: 20, check: (pod) => pod.stats.deaths >= 20 },
+    { id: "centurion", name: "⭐ Centurion", desc: "Destroy 20+ lifetime enemies", points: 20, check: (pod) => pod.stats.enemies >= 20 },
+    { id: "legend", name: "🌟 Legend", desc: "Destroy 50+ lifetime enemies", points: 50, check: (pod) => pod.stats.enemies >= 50 },
+    { id: "supernova", name: "☀️ Supernova", desc: "Destroy 100+ lifetime enemies", points: 100, check: (pod) => pod.stats.enemies >= 100 },
+    { id: "marathon_runner", name: "⏱️ Marathon Runner", desc: "Survive 120+ seconds in one session (advanced)", points: 120, check: (pod, session) => session.sessionLength >= 120 },
 ];
 
 // ==========================================
@@ -154,15 +154,21 @@ app.post("/users/:username/outbox", (req, res) => {
     const session = { enemies, sessionLength: 0 };
     const newBadges = evaluateBadges(pod, session, username);
 
+    // Calculate total badge points
+    const totalPoints = pod.badges.reduce((sum, id) => {
+        const def = BADGE_DEFINITIONS.find(b => b.id === id);
+        return sum + (def ? def.points : 0);
+    }, 0);
+
     // Update leaderboard (upsert)
     const existingEntry = LEADERBOARD.find(e => e.username === username);
     if (existingEntry) {
-        existingEntry.score = pod.highscore;
+        existingEntry.score = totalPoints;
         existingEntry.timestamp = new Date().toLocaleTimeString();
-    } else if (pod.highscore > 0) {
+    } else if (totalPoints > 0) {
         LEADERBOARD.push({
             username,
-            score: pod.highscore,
+            score: totalPoints,
             timestamp: new Date().toLocaleTimeString()
         });
     }
@@ -171,6 +177,7 @@ app.post("/users/:username/outbox", (req, res) => {
     return res.status(200).json({
         success: true,
         verifiedHighScore: pod.highscore,
+        totalPoints,
         newBadges: newBadges.map(b => b.name),
         stats: pod.stats
     });
